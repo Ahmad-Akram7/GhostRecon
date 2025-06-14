@@ -3,6 +3,7 @@
 Run powerful Nmap scans with a single command (no prior experience required).
 
 ***What is GhostRecon?***
+
 `GhostRecon` is a Python-based wrapper around Nmap that streamlines essential network scans like:
 Ping Sweep
 SYN Scan
