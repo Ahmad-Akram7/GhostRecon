@@ -6,17 +6,17 @@ Run powerful Nmap scans with a single command (no prior experience required).
 
 `GhostRecon` is a Python-based wrapper around Nmap that streamlines essential network scans like:
 
-Ping Sweep
+-Ping Sweep
 
-SYN Scan
+-SYN Scan
 
-UDP Scan
+-UDP Scan
 
-Version Detection
+-Version Detection
 
-OS Detection
+-OS Detection
 
-Aggressive Scan (combined techniques)
+-Aggressive Scan (combined techniques)
 
 Perfect for cybersecurity learners, CTF players, bug bounty beginners, and sysadmins who want quick insights with minimal commands.
 ## 📸 Screenshot
