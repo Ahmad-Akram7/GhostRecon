@@ -38,3 +38,19 @@ Works on **Linux**, **macOS**, and **Windows (via WSL)**
 Install Nmap:
 ```bash
 sudo apt update && sudo apt install nmap
+
+
+---
+
+## 🔧 Tools Included
+
+### 🕵️‍♂️ GhostRecon.py
+- Basic recon tool for quick scans (ping, syn, os, aggressive, etc.)
+
+### ⚡ nmapscanner.py
+- Advanced CLI interface for Nmap with:
+  - 12 selectable scan types
+  - Timestamped output files
+  - Cleaner UX with numbered menus
+  - Descriptions for each mode (stealth, OS, top ports, etc.)
+
