@@ -1,0 +1,2 @@
+# No external Python dependencies are explicitly required for the current scripts beyond standard library modules.
+# However, Nmap (the network scanning tool) must be installed separately on your system.
