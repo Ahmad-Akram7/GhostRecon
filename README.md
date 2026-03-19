@@ -1,119 +1,163 @@
-***GhostRecon***
-***Beginner-friendly automated Nmap scanning tool** for ethical hacking, penetration testing, and reconnaissance.  
-Run powerful Nmap scans with a single command (no prior experience required).
+<div align="center">
 
-***What is GhostRecon?***
+<img src="ghostrecon-preview.png" alt="GhostRecon Banner" width="100%" />
 
-`GhostRecon` is a Python-based wrapper around Nmap that streamlines essential network scans like:
+# 👻 GhostRecon
 
-- Ping Sweep
-- SYN Scan
-- UDP Scan
-- Version Detection
-- OS Detection
-- Aggressive Scan (combined techniques)
+**Automated Nmap scanning toolkit for ethical hacking, penetration testing, and network reconnaissance.**
 
-Perfect for cybersecurity learners, CTF players, bug bounty beginners, and sysadmins who want quick insights with minimal commands.
+[![Python](https://img.shields.io/badge/Python-3.6+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-00ffe7?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS%20%7C%20WSL-0af?style=flat-square)]()
+[![Stars](https://img.shields.io/github/stars/Ahmad-Akram7/GhostRecon?style=flat-square&color=ffd700)](https://github.com/Ahmad-Akram7/GhostRecon/stargazers)
+[![GitHub Pages](https://img.shields.io/badge/Docs-GitHub%20Pages-ff3c5a?style=flat-square&logo=github)](https://ahmad-akram7.github.io/GhostRecon)
 
-## 📸 Screenshot
+[🌐 **Live Docs**](https://ahmad-akram7.github.io/GhostRecon) · [📋 Report Bug](https://github.com/Ahmad-Akram7/GhostRecon/issues) · [✨ Request Feature](https://github.com/Ahmad-Akram7/GhostRecon/issues)
 
-![GhostRecon Preview](ghostrecon-preview.png)
+</div>
 
-### ✨ Features
-- **Supports multiple scan types**: `ping`, `syn`, `udp`, `version`, `os`, and `aggressive`
-- **Smart input validation** for IPs/domains
-- **Saves scan results** in organized `.txt` files
-- **Python-powered CLI interface** — clean and interactive
-- **Beginner-friendly** — no need to memorize Nmap commands
-- Works on **Linux**, **macOS**, and **Windows (via WSL)**
+---
 
-## 🚀 Getting Started
+## What is GhostRecon?
 
-### 🧰 Requirements
-- Python 3.6 or higher
-- Nmap installed on your system (GhostRecon is a wrapper around Nmap)
+GhostRecon is a Python wrapper around [Nmap](https://nmap.org) that gives you a clean, interactive CLI to run the most important network scans — without memorizing a single flag.
 
-**Install Nmap:**
+**Built for:** CTF players, bug bounty beginners, security students, sysadmins, and pentesters who want speed over syntax.
+
+---
+
+## ✨ Features
+
+- **12 scan types** across two scripts — from ping sweeps to full aggressive fingerprinting
+- **Interactive menus** — no Nmap flags required
+- **Smart input validation** — rejects malformed IPs/domains before wasting a scan
+- **Auto-saves results** to timestamped `.txt` files in `results/`
+- **Zero Python dependencies** — uses only the standard library
+- **Cross-platform** — Linux, macOS, and Windows (via WSL)
+
+---
+
+## 🗂️ Project Structure
+
+```
+GhostRecon/
+├── GhostRecon.py       # Basic interactive scanner (6 scan types)
+├── nmapscanner.py      # Advanced scanner (12 scan types, timestamped output)
+├── requirements.txt    # No dependencies — stdlib only
+├── results/            # Scan output files (auto-created)
+└── docs/               # GitHub Pages site
+```
+
+---
+
+## 🚀 Quick Start
+
+### 1 — Install Nmap
+
 ```bash
-# For Debian/Ubuntu
+# Debian / Ubuntu
 sudo apt update && sudo apt install nmap
 
-# For macOS (using Homebrew)
+# macOS
 brew install nmap
 
-# For Windows
-# Download the official installer from nmap.org/download.html
+# Windows — https://nmap.org/download.html
 ```
 
-### 💻 Installation (Clone and Setup)
+### 2 — Clone & run
 
-1.  **Clone the repository:**
-    ```bash
-    git clone https://github.com/Ahmad-Akram7/GhostRecon.git
-    cd GhostRecon
-    ```
-2.  **Install Python Dependencies (Optional):**
-    This project primarily uses standard Python libraries. If `requirements.txt` contains any entries in the future, install them:
-    ```bash
-    pip install -r requirements.txt
-    ```
-    *(Note: Currently, `requirements.txt` is empty as only built-in Python modules are used.)*
-
-### 👟 Usage
-
-#### Using `GhostRecon.py` (Basic Scans)
-
-This script offers a straightforward interactive interface for common Nmap scans.
-
-**Example:**
 ```bash
+git clone https://github.com/Ahmad-Akram7/GhostRecon.git
+cd GhostRecon
+
+# Basic scanner
 python GhostRecon.py
-```
-Follow the prompts to enter the target IP/domain and select a scan type.
 
-#### Using `nmapscanner.py` (Advanced Interactive Scans)
-
-`nmapscanner.py` provides a more advanced and interactive command-line interface with 12 selectable scan types, timestamped output files, and a cleaner user experience.
-
-**Example:**
-```bash
+# Advanced scanner (recommended)
 python nmapscanner.py
 ```
-Follow the interactive menu to choose from various scan modes:
 
-**Available Scan Types in `nmapscanner.py`:**
-1.  **Ping (port availability):** ICMP echo to check if the host is up (no port scan).
-2.  **SYN (Stealth Scan):** Stealth SYN scan (half-open TCP handshake).
-3.  **UDP (Open UDP services):** UDP scan.
-4.  **Version (Service Versions):** Detect service versions.
-5.  **OS (OS Detection):** OS fingerprinting.
-6.  **Aggressive (All of them):** Combination scan including OS detection, version detection, script scanning, and traceroute.
-7.  **Stealth (Stealthier):** SYN scan with no ping (`-sS -Pn`).
-8.  **Full TCP:** Full TCP connect scan (`-sT`).
-9.  **Slow (Evade Detection):** Slower stealth scan with timing template (`-sS -T2 -Pn`).
-10. **No Ping (Skip Ping):** No host discovery (`-Pn`).
-11. **Traceroute (Shows Path):** Traceroute to target (`--traceroute`).
-12. **Top Ports (Top 100 Ports):** Scans the top 100 most common ports (`--top-ports 100`).
+> **Note:** Some scan types (SYN, OS detection) require root/admin privileges.
+> Run with `sudo python nmapscanner.py` on Linux/macOS.
+
+---
+
+## 🔍 Scan Types
+
+### GhostRecon.py — Basic (6 types)
+
+| Scan | Nmap Flag | Description |
+|------|-----------|-------------|
+| Ping Sweep | `-sn` | Check if host is alive |
+| SYN Scan | `-sS` | Stealth half-open scan |
+| UDP Scan | `-sU` | Discover open UDP ports |
+| Version Detection | `-sV` | Fingerprint service versions |
+| OS Detection | `-O` | Remote OS fingerprinting |
+| Aggressive | `-A` | All-in-one: OS + version + scripts + traceroute |
+
+### nmapscanner.py — Advanced (12 types)
+
+| Scan | Flag(s) | Description | Type |
+|------|---------|-------------|------|
+| Ping | `-sn` | Host alive check | Recon |
+| SYN | `-sS` | Stealth half-open | Stealth |
+| UDP | `-sU` | UDP service discovery | Recon |
+| Version | `-sV` | Service version detection | Enum |
+| OS | `-O` | OS fingerprinting | Enum |
+| Aggressive | `-A` | Full combo scan | Aggressive |
+| Stealth | `-sS -Pn` | SYN scan, skips ping | Stealth |
+| Full TCP | `-sT` | Full connect scan, no root needed | Recon |
+| Slow | `-sS -T2 -Pn` | Low-speed to evade IDS/IPS | Evasion |
+| No Ping | `-Pn` | Skip host discovery | Stealth |
+| Traceroute | `--traceroute` | Map network path to target | Recon |
+| Top Ports | `--top-ports 100` | Scan 100 most common ports | Recon |
+
+---
+
+## 📂 Output
+
+Scan results are automatically saved to `results/` with timestamps:
+
+```
+results/
+└── scan_20250614_154201.txt
+```
+
+Each file contains the full Nmap output for that target and scan type.
+
+---
+
+## ⚠️ Legal Disclaimer
+
+> GhostRecon is intended for **authorized testing only**.  
+> Only scan networks and hosts you own or have explicit written permission to test.  
+> Unauthorized scanning may violate laws in your country. The author assumes no liability for misuse.
+
+---
 
 ## 🤝 Contributing
 
-Contributions are welcome! If you find a bug, have an idea for an improvement, or want to add more scan types, please feel free to open an issue or submit a pull request.
+Contributions are welcome! Here's how:
+
+1. Fork the repo
+2. Create a feature branch: `git checkout -b feature/new-scan-type`
+3. Commit your changes: `git commit -m "feat: add new scan type"`
+4. Push and open a Pull Request
+
+Ideas for contributions: additional scan types, a GUI frontend, export to JSON/CSV, Shodan integration.
+
+---
 
 ## 📄 License
 
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Distributed under the **MIT License**. See [`LICENSE`](LICENSE) for details.
 
-## 🏷️ GitHub Topics (for Discoverability)
+---
 
-To improve the visibility and searchability of this repository on GitHub, it is highly recommended to add the following topics via your repository settings:
-- `nmap`
-- `ethical-hacking`
-- `penetration-testing`
-- `reconnaissance`
-- `cybersecurity`
-- `python`
-- `network-scanning`
-- `security-tools`
-- `beginner-friendly`
-- `nmap-wrapper`
-- `automation`
+<div align="center">
+
+Built by [Ahmad Akram](https://github.com/Ahmad-Akram7) · [LinkedIn](https://linkedin.com/in/ahmadd-akram)
+
+⭐ Star the repo if it helped you!
+
+</div>
