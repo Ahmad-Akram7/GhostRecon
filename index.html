@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GhostRecon — Stealth Network Scanner</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;500;600;700&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #030a0f;
+      --bg2: #050f18;
+      --surface: #071520;
+      --border: #0d2535;
+      --accent: #00ffe7;
+      --accent2: #0af;
+      --red: #ff3c5a;
+      --dim: #2a4a60;
+      --muted: #4a7a9a;
+      --text: #c8e8f8;
+      --text-dim: #6a9ab0;
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-ui: 'Rajdhani', sans-serif;
+      --font-head: 'Orbitron', monospace;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-ui);
+      font-size: 17px;
+      line-height: 1.7;
+      overflow-x: hidden;
+    }
+
+    /* ─── SCANLINE OVERLAY ─── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,255,231,0.012) 2px,
+        rgba(0,255,231,0.012) 4px
+      );
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* ─── GRID BG ─── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0,170,255,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0,170,255,0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 2.5rem;
+      height: 64px;
+      background: rgba(3,10,15,0.85);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .nav-logo {
+      font-family: var(--font-head);
+      font-size: 1.1rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      text-decoration: none;
+    }
+
+    .nav-logo span { color: var(--text-dim); font-size: 0.75em; }
+
+    .nav-links { display: flex; gap: 2rem; }
+    .nav-links a {
+      font-family: var(--font-ui);
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ─── HERO ─── */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 6rem 2rem 4rem;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Radial glow bg */
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 900px; height: 900px;
+      background: radial-gradient(ellipse at center,
+        rgba(0,255,231,0.07) 0%,
+        rgba(0,170,255,0.04) 30%,
+        transparent 70%);
+      pointer-events: none;
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent);
+      letter-spacing: 0.15em;
+      border: 1px solid rgba(0,255,231,0.25);
+      padding: 0.35rem 1rem;
+      border-radius: 2px;
+      margin-bottom: 2.5rem;
+      background: rgba(0,255,231,0.04);
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .status-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,231,0.6); }
+      50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(0,255,231,0); }
+    }
+
+    .hero-title {
+      font-family: var(--font-head);
+      font-size: clamp(3rem, 10vw, 7rem);
+      font-weight: 900;
+      line-height: 0.9;
+      letter-spacing: 0.05em;
+      color: #fff;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .hero-title .ghost { color: var(--accent); }
+    .hero-title .recon {
+      display: block;
+      color: var(--text-dim);
+      font-size: 0.55em;
+      letter-spacing: 0.3em;
+      margin-top: 0.3em;
+    }
+
+    .hero-subtitle {
+      max-width: 540px;
+      font-size: 1.05rem;
+      font-weight: 400;
+      color: var(--text-dim);
+      margin: 2rem auto 0;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    .hero-cta {
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 3rem;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .btn {
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 0.85rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      text-decoration: none;
+      padding: 0.75rem 2rem;
+      border-radius: 2px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #000;
+      border: 1px solid var(--accent);
+    }
+    .btn-primary:hover {
+      background: transparent;
+      color: var(--accent);
+      box-shadow: 0 0 20px rgba(0,255,231,0.3);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .btn-ghost:hover {
+      border-color: var(--accent2);
+      color: var(--accent2);
+    }
+
+    /* ─── TERMINAL ─── */
+    .terminal-wrap {
+      margin: 3rem auto 0;
+      max-width: 640px;
+      width: 100%;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .terminal {
+      background: rgba(5,15,24,0.9);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+      box-shadow:
+        0 0 0 1px rgba(0,255,231,0.05),
+        0 40px 80px rgba(0,0,0,0.6),
+        0 0 60px rgba(0,255,231,0.04);
+    }
+
+    .terminal-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0.6rem 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .dot { width: 10px; height: 10px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; }
+    .dot-y { background: #febc2e; }
+    .dot-g { background: #28c840; }
+
+    .terminal-title {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .terminal-body {
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      line-height: 2;
+      color: var(--text);
+    }
+
+    .t-prompt { color: var(--accent); }
+    .t-cmd { color: #fff; }
+    .t-info { color: var(--accent2); }
+    .t-ok { color: #3eff8b; }
+    .t-warn { color: #ffd700; }
+    .t-red { color: var(--red); }
+    .t-dim { color: var(--text-dim); }
+
+    .t-cursor {
+      display: inline-block;
+      width: 8px; height: 1em;
+      background: var(--accent);
+      vertical-align: text-bottom;
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ─── SECTIONS ─── */
+    section {
+      position: relative;
+      z-index: 1;
+      padding: 6rem 2rem;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .section-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 0.75rem;
+    }
+
+    .section-title {
+      font-family: var(--font-head);
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      font-weight: 700;
+      color: #fff;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+
+    .section-desc {
+      color: var(--text-dim);
+      max-width: 560px;
+      font-size: 1rem;
+    }
+
+    /* ─── FEATURES ─── */
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1px;
+      margin-top: 4rem;
+      border: 1px solid var(--border);
+    }
+
+    .feature-card {
+      background: var(--surface);
+      padding: 2rem;
+      position: relative;
+      transition: background 0.2s;
+      overflow: hidden;
+    }
+
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 3px; height: 0;
+      background: var(--accent);
+      transition: height 0.3s ease;
+    }
+
+    .feature-card:hover { background: #091a28; }
+    .feature-card:hover::before { height: 100%; }
+
+    .feature-icon {
+      font-size: 1.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .feature-title {
+      font-family: var(--font-head);
+      font-size: 0.9rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+    }
+
+    .feature-text {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      line-height: 1.6;
+    }
+
+    /* ─── SCAN TYPES ─── */
+    .scans-bg {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scans-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+      gap: 1rem;
+      margin-top: 3rem;
+    }
+
+    .scan-card {
+      border: 1px solid var(--border);
+      padding: 1.25rem 1.5rem;
+      border-radius: 2px;
+      background: var(--surface);
+      transition: border-color 0.2s, box-shadow 0.2s;
+      cursor: default;
+    }
+
+    .scan-card:hover {
+      border-color: rgba(0,255,231,0.4);
+      box-shadow: 0 0 20px rgba(0,255,231,0.05);
+    }
+
+    .scan-name {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      letter-spacing: 0.1em;
+      margin-bottom: 0.3rem;
+    }
+
+    .scan-flag {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      margin-bottom: 0.6rem;
+      opacity: 0.7;
+    }
+
+    .scan-desc {
+      font-size: 0.85rem;
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .scan-badge {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 2px;
+      margin-top: 0.5rem;
+      letter-spacing: 0.1em;
+    }
+
+    .badge-stealth { background: rgba(0,255,231,0.08); color: var(--accent); border: 1px solid rgba(0,255,231,0.2); }
+    .badge-aggressive { background: rgba(255,60,90,0.1); color: var(--red); border: 1px solid rgba(255,60,90,0.25); }
+    .badge-default { background: rgba(0,170,255,0.08); color: var(--accent2); border: 1px solid rgba(0,170,255,0.2); }
+
+    /* ─── INSTALL ─── */
+    .install-steps {
+      margin-top: 3rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.5rem;
+      max-width: 700px;
+    }
+
+    .install-step {
+      display: grid;
+      grid-template-columns: 40px 1fr;
+      gap: 1.5rem;
+      align-items: start;
+    }
+
+    .step-num {
+      width: 40px; height: 40px;
+      border: 1px solid var(--dim);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--accent);
+      flex-shrink: 0;
+      margin-top: 0.2rem;
+    }
+
+    .step-content h4 {
+      font-family: var(--font-ui);
+      font-weight: 700;
+      font-size: 1rem;
+      color: #fff;
+      margin-bottom: 0.5rem;
+    }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      padding: 0.8rem 1.2rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: var(--text);
+      border-radius: 0 2px 2px 0;
+      overflow-x: auto;
+      white-space: pre;
+      margin-top: 0.5rem;
+    }
+
+    /* ─── STATS ─── */
+    .stats-strip {
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+      padding: 3rem 2rem;
+    }
+
+    .stats-inner {
+      max-width: 900px;
+      margin: 0 auto;
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      gap: 2rem;
+    }
+
+    .stat {
+      text-align: center;
+    }
+
+    .stat-num {
+      font-family: var(--font-head);
+      font-size: 2.5rem;
+      font-weight: 900;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 0.25rem;
+    }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--bg2);
+      border-top: 1px solid var(--border);
+      padding: 3rem 2rem;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .footer-logo {
+      font-family: var(--font-head);
+      font-size: 1.5rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      margin-bottom: 0.5rem;
+    }
+
+    .footer-tagline {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      letter-spacing: 0.2em;
+      margin-bottom: 2rem;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 2rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+
+    .footer-links a {
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-decoration: none;
+      transition: color 0.2s;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+    }
+
+    .footer-links a:hover { color: var(--accent); }
+
+    .footer-copy {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--dim);
+    }
+
+    /* ─── DIVIDER ─── */
+    .divider {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--dim), transparent);
+      margin: 0 auto;
+      max-width: 600px;
+    }
+
+    /* ─── ANIMATIONS ─── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .reveal {
+      opacity: 0;
+      transform: translateY(24px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+
+    .reveal.visible {
+      opacity: 1;
+      transform: none;
+    }
+
+    /* ─── SCROLLBAR ─── */
+    ::-webkit-scrollbar { width: 5px; }
+    ::-webkit-scrollbar-track { background: var(--bg); }
+    ::-webkit-scrollbar-thumb { background: var(--dim); border-radius: 3px; }
+
+    /* ─── RESPONSIVE ─── */
+    @media (max-width: 600px) {
+      .nav-links { display: none; }
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    /* glitch effect on title hover */
+    .hero-title:hover .ghost {
+      animation: glitch 0.4s ease;
+    }
+
+    @keyframes glitch {
+      0%   { text-shadow: none; }
+      20%  { text-shadow: 3px 0 var(--red), -3px 0 var(--accent2); }
+      40%  { text-shadow: -3px 0 var(--red), 3px 0 var(--accent2); }
+      60%  { text-shadow: 2px 0 var(--accent); }
+      80%  { text-shadow: none; }
+      100% { text-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <a class="nav-logo" href="#"><span>//</span> GHOST<span>RECON</span></a>
+    <div class="nav-links">
+      <a href="#features">Features</a>
+      <a href="#scans">Scan Types</a>
+      <a href="#install">Install</a>
+      <a href="https://github.com/Ahmad-Akram7/GhostRecon" target="_blank">GitHub</a>
+    </div>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="status-badge">
+      <div class="status-dot"></div>
+      OPERATIONAL — v2.0 — MIT LICENSE
+    </div>
+
+    <h1 class="hero-title">
+      <span class="ghost">GHOST</span>
+      <span class="recon">RECON</span>
+    </h1>
+
+    <p class="hero-subtitle">
+      A Python-powered Nmap wrapper for stealth network scanning, reconnaissance, and ethical hacking — from zero to scan in seconds.
+    </p>
+
+    <div class="hero-cta">
+      <a href="#install" class="btn btn-primary">▶ Quick Start</a>
+      <a href="https://github.com/Ahmad-Akram7/GhostRecon" class="btn btn-ghost" target="_blank">⬡ View on GitHub</a>
+    </div>
+
+    <div class="terminal-wrap">
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="dot dot-r"></div>
+          <div class="dot dot-y"></div>
+          <div class="dot dot-g"></div>
+          <span class="terminal-title">ghostrecon — bash</span>
+        </div>
+        <div class="terminal-body">
+<span class="t-prompt">$ </span><span class="t-cmd">git clone https://github.com/Ahmad-Akram7/GhostRecon.git</span>
+<span class="t-ok">✓ Cloning into 'GhostRecon'...</span>
+<span class="t-ok">✓ Resolving deltas: 100% complete</span>
+
+<span class="t-prompt">$ </span><span class="t-cmd">python nmapscanner.py</span>
+
+<span class="t-info">╔══════════════════════════════════════╗</span>
+<span class="t-info">║      GhostRecon — Stealth Scanner     ║</span>
+<span class="t-info">╚══════════════════════════════════════╝</span>
+<span class="t-warn">  Target: </span><span class="t-cmd">192.168.1.1</span>
+<span class="t-warn">  Scan  : </span><span class="t-cmd">Aggressive</span>
+
+<span class="t-ok">[+] Scan complete → results/scan_20250614_1542.txt</span>
+<span class="t-cursor"></span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats-strip">
+    <div class="stats-inner">
+      <div class="stat">
+        <div class="stat-num">12</div>
+        <div class="stat-label">Scan Types</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">OS Platforms</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">0</div>
+        <div class="stat-label">Dependencies</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">MIT</div>
+        <div class="stat-label">License</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section id="features">
+    <div class="container">
+      <div class="reveal">
+        <div class="section-label">// 01 — CAPABILITIES</div>
+        <h2 class="section-title">Designed for the field.</h2>
+        <p class="section-desc">Everything you need for fast, efficient recon without memorizing flags.</p>
+      </div>
+
+      <div class="features-grid reveal">
+        <div class="feature-card">
+          <div class="feature-icon">⚡</div>
+          <div class="feature-title">Zero Learning Curve</div>
+          <p class="feature-text">No need to memorize Nmap syntax. Interactive menus guide you through every scan type with smart defaults.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">📁</div>
+          <div class="feature-title">Organized Output</div>
+          <p class="feature-text">Every scan saves automatically to a timestamped .txt file. Your recon history stays clean and searchable.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🧠</div>
+          <div class="feature-title">Smart Validation</div>
+          <p class="feature-text">Built-in input validation catches malformed IPs and domains before wasting time on bad targets.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🖥️</div>
+          <div class="feature-title">Cross-Platform</div>
+          <p class="feature-text">Works on Linux, macOS, and Windows (via WSL). One tool, everywhere your work takes you.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🎯</div>
+          <div class="feature-title">12 Scan Modes</div>
+          <p class="feature-text">From basic ping sweeps to full aggressive fingerprinting — nmapscanner.py covers every recon scenario.</p>
+        </div>
+        <div class="feature-card">
+          <div class="feature-icon">🔓</div>
+          <div class="feature-title">Open Source</div>
+          <p class="feature-text">MIT licensed. Fork it, modify it, ship it. Built for the community, by the community.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SCAN TYPES -->
+  <section id="scans" class="scans-bg">
+    <div class="container">
+      <div class="reveal">
+        <div class="section-label">// 02 — SCAN TYPES</div>
+        <h2 class="section-title">12 modes. Every scenario.</h2>
+        <p class="section-desc">From silent recon to full-spectrum aggressive scans — pick the right tool for the job.</p>
+      </div>
+
+      <div class="scans-grid reveal">
+        <div class="scan-card">
+          <div class="scan-name">PING SWEEP</div>
+          <div class="scan-flag">-sn</div>
+          <div class="scan-desc">ICMP echo check — confirm host is alive before investing in deeper scans.</div>
+          <span class="scan-badge badge-default">RECON</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">SYN SCAN</div>
+          <div class="scan-flag">-sS</div>
+          <div class="scan-desc">Half-open TCP handshake. Fast, stealthy, avoids full connection logging.</div>
+          <span class="scan-badge badge-stealth">STEALTH</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">UDP SCAN</div>
+          <div class="scan-flag">-sU</div>
+          <div class="scan-desc">Discover open UDP services often missed by TCP-only scans.</div>
+          <span class="scan-badge badge-default">RECON</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">VERSION DETECTION</div>
+          <div class="scan-flag">-sV</div>
+          <div class="scan-desc">Fingerprint exact service versions running on open ports.</div>
+          <span class="scan-badge badge-default">ENUM</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">OS DETECTION</div>
+          <div class="scan-flag">-O</div>
+          <div class="scan-desc">Remote OS fingerprinting via TCP/IP stack analysis.</div>
+          <span class="scan-badge badge-default">ENUM</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">AGGRESSIVE</div>
+          <div class="scan-flag">-A</div>
+          <div class="scan-desc">OS detection + version + scripts + traceroute. Maximum intel.</div>
+          <span class="scan-badge badge-aggressive">AGGRESSIVE</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">STEALTH</div>
+          <div class="scan-flag">-sS -Pn</div>
+          <div class="scan-desc">SYN scan with no ping — evades firewalls that block ICMP.</div>
+          <span class="scan-badge badge-stealth">STEALTH</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">FULL TCP</div>
+          <div class="scan-flag">-sT</div>
+          <div class="scan-desc">Full TCP connect scan — works without root, more reliable in some environments.</div>
+          <span class="scan-badge badge-default">RECON</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">SLOW SCAN</div>
+          <div class="scan-flag">-sS -T2 -Pn</div>
+          <div class="scan-desc">Low-speed scan to evade IDS/IPS rate-based detection systems.</div>
+          <span class="scan-badge badge-stealth">EVASION</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">NO PING</div>
+          <div class="scan-flag">-Pn</div>
+          <div class="scan-desc">Skip host discovery — scan even hosts that block ping probes.</div>
+          <span class="scan-badge badge-stealth">STEALTH</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">TRACEROUTE</div>
+          <div class="scan-flag">--traceroute</div>
+          <div class="scan-desc">Map the network path to target — identify hops and routing topology.</div>
+          <span class="scan-badge badge-default">RECON</span>
+        </div>
+        <div class="scan-card">
+          <div class="scan-name">TOP PORTS</div>
+          <div class="scan-flag">--top-ports 100</div>
+          <div class="scan-desc">Scan the 100 most common ports — fast coverage of likely attack surface.</div>
+          <span class="scan-badge badge-default">RECON</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- INSTALL -->
+  <section id="install">
+    <div class="container">
+      <div class="reveal">
+        <div class="section-label">// 03 — INSTALLATION</div>
+        <h2 class="section-title">Up and running in 60 seconds.</h2>
+        <p class="section-desc">No package hell. No venv. Just Python and Nmap.</p>
+      </div>
+
+      <div class="install-steps reveal">
+        <div class="install-step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h4>Install Nmap</h4>
+            <div class="code-block"># Debian / Ubuntu
+sudo apt update && sudo apt install nmap
+
+# macOS
+brew install nmap
+
+# Windows — download from nmap.org/download.html</div>
+          </div>
+        </div>
+
+        <div class="install-step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h4>Clone the repo</h4>
+            <div class="code-block">git clone https://github.com/Ahmad-Akram7/GhostRecon.git
+cd GhostRecon</div>
+          </div>
+        </div>
+
+        <div class="install-step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h4>Run the scanner</h4>
+            <div class="code-block"># Basic scanner
+python GhostRecon.py
+
+# Advanced interactive scanner (recommended)
+python nmapscanner.py</div>
+          </div>
+        </div>
+
+        <div class="install-step">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h4>View your results</h4>
+            <div class="code-block">ls results/
+# → scan_20250614_154201.txt
+cat results/scan_20250614_154201.txt</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-logo">GHOSTRECON</div>
+    <div class="footer-tagline">// AUTOMATED NETWORK RECONNAISSANCE TOOLKIT</div>
+
+    <div class="footer-links">
+      <a href="https://github.com/Ahmad-Akram7/GhostRecon" target="_blank">GitHub Repo</a>
+      <a href="https://github.com/Ahmad-Akram7/GhostRecon/issues" target="_blank">Report Bug</a>
+      <a href="https://github.com/Ahmad-Akram7/GhostRecon/blob/main/LICENSE" target="_blank">MIT License</a>
+      <a href="https://github.com/Ahmad-Akram7" target="_blank">Ahmad Akram</a>
+    </div>
+
+    <div class="footer-copy">
+      Built for ethical hacking, CTFs, and network learning. Use responsibly and only on systems you own or have permission to test.
+    </div>
+  </footer>
+
+  <script>
+    // Scroll reveal
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          e.target.classList.add('visible');
+          observer.unobserve(e.target);
+        }
+      });
+    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal').forEach(el => observer.observe(el));
+
+    // Stagger feature cards
+    document.querySelectorAll('.feature-card').forEach((el, i) => {
+      el.style.transitionDelay = `${i * 0.06}s`;
+    });
+
+    document.querySelectorAll('.scan-card').forEach((el, i) => {
+      el.style.transitionDelay = `${i * 0.04}s`;
+    });
+  </script>
+</body>
+</html>
